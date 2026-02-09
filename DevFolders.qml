@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Common
@@ -213,7 +214,7 @@ PluginComponent {
                     return "~" + root.watchDirectory.slice(home.length)
                 return root.watchDirectory
             }
-            showCloseButton: true
+            showCloseButton: false
 
             property string searchQuery: ""
             property int selectedIndex: 0
@@ -275,12 +276,14 @@ PluginComponent {
                 Column {
                     id: contentColumn
                     anchors.fill: parent
-                    anchors.margins: Theme.spacingM
+                    anchors.topMargin: Theme.spacingM
+                    anchors.leftMargin: Theme.spacingM
+                    anchors.bottomMargin: Theme.spacingM
                     spacing: Theme.spacingM
 
                     // Search box
                     Rectangle {
-                        width: parent.width
+                        width: parent.width - Theme.spacingM
                         height: 44
                         radius: Theme.cornerRadius
                         color: Theme.surfaceContainerHigh
@@ -314,6 +317,7 @@ PluginComponent {
                                 font.pixelSize: Theme.fontSizeMedium
                                 clip: true
                                 selectByMouse: true
+                                cursorVisible: activeFocus
 
                                 Component.onCompleted: forceActiveFocus()
 
@@ -358,16 +362,21 @@ PluginComponent {
                                     } else if (event.key === Qt.Key_PageUp) {
                                         popout.moveSelection(-5)
                                         event.accepted = true
+                                    } else if (event.key === Qt.Key_R && (event.modifiers & Qt.ControlModifier)) {
+                                        refreshPulse.restart()
+                                        root.refreshFolders()
+                                        event.accepted = true
                                     }
                                 }
 
-                                Text {
+                                StyledText {
                                     anchors.fill: parent
                                     verticalAlignment: Text.AlignVCenter
                                     text: "Search folders..."
                                     color: Theme.surfaceVariantText
                                     font.pixelSize: Theme.fontSizeMedium
                                     visible: !searchField.text
+                                    font.italic: true
                                 }
                             }
 
@@ -375,7 +384,10 @@ PluginComponent {
                                 id: clearBtn
                                 width: searchField.text ? Theme.iconSize : 0
                                 height: parent.height
-                                visible: searchField.text
+                                opacity: searchField.text ? 1 : 0
+
+                                Behavior on width { NumberAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
+                                Behavior on opacity { NumberAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
 
                                 DankIcon {
                                     name: "close"
@@ -391,6 +403,7 @@ PluginComponent {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
+                                    enabled: searchField.text
                                     onClicked: {
                                         searchField.text = ""
                                         popout.selectedIndex = 0
@@ -402,19 +415,27 @@ PluginComponent {
                     }
 
                     // Toolbar
-                    Row {
+                    Item {
                         id: toolbar
-                        width: parent.width
+                        width: parent.width - Theme.spacingM
                         height: Theme.iconSize + Theme.spacingS
-                        spacing: Theme.spacingS
 
                         Rectangle {
+                            id: refreshBtn
                             width: toolbar.height
                             height: toolbar.height
                             radius: Theme.cornerRadiusSmall
                             color: refreshArea.containsMouse ? Theme.surfaceContainerHighest : "transparent"
+                            scale: 1.0
+                            anchors.verticalCenter: parent.verticalCenter
 
                             Behavior on color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
+
+                            SequentialAnimation {
+                                id: refreshPulse
+                                NumberAnimation { target: refreshBtn; property: "scale"; to: 0.8; duration: 100; easing.type: Easing.InQuad }
+                                NumberAnimation { target: refreshBtn; property: "scale"; to: 1.0; duration: 200; easing.type: Easing.OutBack }
+                            }
 
                             DankIcon {
                                 name: "refresh"
@@ -437,6 +458,7 @@ PluginComponent {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
+                                    refreshPulse.restart()
                                     root.refreshFolders()
                                     searchField.forceActiveFocus()
                                 }
@@ -449,15 +471,16 @@ PluginComponent {
                                 : root.folderList.length + " folders"
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
+                            anchors.left: refreshBtn.right
+                            anchors.leftMargin: Theme.spacingS
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Item { height: 1; width: 1 }
-
                         StyledText {
-                            text: "↑↓ ⇥ ⏎"
+                            text: "↑↓ ⇥ ⏎ ^R"
                             font.pixelSize: Theme.fontSizeXSmall
                             color: Theme.outlineVariant
+                            anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -468,9 +491,27 @@ PluginComponent {
                         width: parent.width
                         height: parent.height - 44 - toolbar.height - Theme.spacingM * 2
                         clip: true
+                        opacity: 0
+                        Component.onCompleted: opacity = 1
+                        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration; easing.type: Theme.standardEasing } }
                         model: popout.filteredFolders
                         currentIndex: popout.selectedIndex
                         spacing: Theme.spacingS
+                        ScrollBar.vertical: ScrollBar {
+                            id: scrollBar
+                            contentItem: Rectangle {
+                                implicitWidth: 4
+                                radius: 2
+                                color: scrollBar.pressed ? Theme.primary : Theme.outlineVariant
+                                opacity: scrollBar.active ? 1 : 0
+                                Behavior on opacity { NumberAnimation { duration: Theme.shortDuration } }
+                                Behavior on color { ColorAnimation { duration: Theme.shortDuration } }
+                            }
+                        }
+
+                        displaced: Transition {
+                            NumberAnimation { properties: "y"; duration: Theme.shortDuration; easing.type: Theme.standardEasing }
+                        }
 
                         delegate: Rectangle {
                             id: delegateItem
@@ -479,7 +520,7 @@ PluginComponent {
 
                             property bool isSelected: index === popout.selectedIndex
 
-                            width: listView.width
+                            width: listView.width - (scrollBar.visible ? scrollBar.width + Theme.spacingXS : Theme.spacingM)
                             height: 48
                             radius: Theme.cornerRadius
                             color: {
@@ -499,23 +540,20 @@ PluginComponent {
                                 spacing: Theme.spacingM
 
                                 DankIcon {
-                                    name: "folder"
+                                    name: delegateItem.isSelected ? "folder_open" : "folder"
                                     size: Theme.iconSize
                                     color: Theme.primary
                                     anchors.verticalCenter: parent.verticalCenter
-
-                                    Behavior on color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
                                 }
 
                                 StyledText {
                                     text: delegateItem.modelData
                                     font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: delegateItem.isSelected ? Font.Medium : Font.Normal
                                     color: Theme.surfaceText
                                     anchors.verticalCenter: parent.verticalCenter
                                     elide: Text.ElideMiddle
                                     width: parent.width - Theme.iconSize * 2 - Theme.spacingM * 3
-
-                                    Behavior on color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
                                 }
 
                                 DankIcon {
@@ -556,10 +594,12 @@ PluginComponent {
                             visible: root.isLoading && popout.filteredFolders.length === 0
                             anchors.centerIn: parent
                             spacing: Theme.spacingM
+                            opacity: visible ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration; easing.type: Theme.standardEasing } }
 
                             DankIcon {
                                 name: "sync"
-                                size: 48
+                                size: Theme.iconSize * 2
                                 color: Theme.surfaceVariantText
                                 opacity: 0.5
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -586,10 +626,12 @@ PluginComponent {
                             visible: !root.isLoading && popout.filteredFolders.length === 0
                             anchors.centerIn: parent
                             spacing: Theme.spacingM
+                            opacity: visible ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration; easing.type: Theme.standardEasing } }
 
                             DankIcon {
                                 name: popout.searchQuery ? "search_off" : "folder_off"
-                                size: 48
+                                size: Theme.iconSize * 2
                                 color: Theme.surfaceVariantText
                                 opacity: 0.5
                                 anchors.horizontalCenter: parent.horizontalCenter
