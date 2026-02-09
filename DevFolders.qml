@@ -9,7 +9,7 @@ import qs.Modules.Plugins
 PluginComponent {
     id: root
 
-    layerNamespacePlugin: "project-folders"
+    layerNamespacePlugin: "dev-folders"
 
     // Settings from pluginData
     property string watchDirectory: pluginData.watchDirectory ?? ""
@@ -71,7 +71,7 @@ PluginComponent {
         stderr: SplitParser {
             onRead: line => {
                 if (line.trim()) {
-                    console.warn("ProjectFolders:", line)
+                    console.warn("DevFolders:", line)
                 }
             }
         }
@@ -205,8 +205,14 @@ PluginComponent {
         PopoutComponent {
             id: popout
 
-            headerText: "Project Folders"
-            detailsText: root.watchDirectory || "No directory configured"
+            headerText: "DevFolders"
+            detailsText: {
+                if (!root.watchDirectory) return "No directory configured"
+                const home = Qt.getenv("HOME")
+                if (home && root.watchDirectory.startsWith(home))
+                    return "~" + root.watchDirectory.slice(home.length)
+                return root.watchDirectory
+            }
             showCloseButton: true
 
             property string searchQuery: ""
@@ -278,8 +284,8 @@ PluginComponent {
                         height: 44
                         radius: Theme.cornerRadius
                         color: Theme.surfaceContainerHigh
-                        border.color: searchField.activeFocus ? Theme.primary : Theme.outlineVariant
-                        border.width: searchField.activeFocus ? 2 : 1
+                        border.color: searchField.activeFocus ? Theme.primary : "transparent"
+                        border.width: searchField.activeFocus ? 2 : 0
 
                         Behavior on border.color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
                         Behavior on border.width { NumberAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
@@ -413,8 +419,16 @@ PluginComponent {
                             DankIcon {
                                 name: "refresh"
                                 size: Theme.iconSizeSmall
-                                color: Theme.primary
+                                color: root.isLoading ? Theme.surfaceVariantText : Theme.primary
                                 anchors.centerIn: parent
+
+                                RotationAnimator on rotation {
+                                    from: 0
+                                    to: 360
+                                    duration: 1000
+                                    loops: Animation.Infinite
+                                    running: root.isLoading
+                                }
                             }
 
                             MouseArea {
@@ -430,7 +444,7 @@ PluginComponent {
                         }
 
                         StyledText {
-                            text: popout.searchQuery 
+                            text: popout.searchQuery
                                 ? popout.filteredFolders.length + "/" + root.folderList.length
                                 : root.folderList.length + " folders"
                             font.pixelSize: Theme.fontSizeSmall
@@ -438,10 +452,10 @@ PluginComponent {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Item { width: 1; height: 1 }
+                        Item { height: 1; width: 1 }
 
                         StyledText {
-                            text: "↑↓ ⇥ ⏎ ⌘⏎"
+                            text: "↑↓ ⇥ ⏎"
                             font.pixelSize: Theme.fontSizeXSmall
                             color: Theme.outlineVariant
                             anchors.verticalCenter: parent.verticalCenter
@@ -456,29 +470,33 @@ PluginComponent {
                         clip: true
                         model: popout.filteredFolders
                         currentIndex: popout.selectedIndex
-                        spacing: Theme.spacingXS
+                        spacing: Theme.spacingS
 
                         delegate: Rectangle {
                             id: delegateItem
                             required property string modelData
                             required property int index
 
+                            property bool isSelected: index === popout.selectedIndex
+
                             width: listView.width
-                            height: 44
+                            height: 48
                             radius: Theme.cornerRadius
                             color: {
-                                if (index === popout.selectedIndex) return Theme.primaryContainer
+                                if (isSelected) return Theme.primaryContainer
                                 if (delegateArea.containsMouse) return Theme.surfaceContainerHighest
-                                return "transparent"
+                                return Theme.surfaceContainerHigh
                             }
+                            border.width: isSelected ? 2 : 0
+                            border.color: Theme.primary
 
                             Behavior on color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
+                            Behavior on border.width { NumberAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
 
                             Row {
                                 anchors.fill: parent
-                                anchors.leftMargin: Theme.spacingM
-                                anchors.rightMargin: Theme.spacingM
-                                spacing: Theme.spacingS
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingM
 
                                 DankIcon {
                                     name: "folder"
@@ -495,7 +513,7 @@ PluginComponent {
                                     color: Theme.surfaceText
                                     anchors.verticalCenter: parent.verticalCenter
                                     elide: Text.ElideMiddle
-                                    width: parent.width - Theme.iconSize * 2 - Theme.spacingS * 3
+                                    width: parent.width - Theme.iconSize * 2 - Theme.spacingM * 3
 
                                     Behavior on color { ColorAnimation { duration: Theme.shortDuration; easing.type: Theme.standardEasing } }
                                 }
@@ -504,7 +522,7 @@ PluginComponent {
                                     name: "chevron_right"
                                     size: Theme.iconSize
                                     color: {
-                                        if (delegateArea.containsMouse || delegateItem.index === popout.selectedIndex) return Theme.primary
+                                        if (delegateArea.containsMouse || delegateItem.isSelected) return Theme.primary
                                         return Theme.outlineVariant
                                     }
                                     anchors.verticalCenter: parent.verticalCenter
@@ -594,6 +612,6 @@ PluginComponent {
         }
     }
 
-    popoutWidth: 360
-    popoutHeight: 420
+    popoutWidth: 380
+    popoutHeight: 480
 }

@@ -1,4 +1,4 @@
-# Project Folders Widget
+# DevFolders
 
 A DankMaterialShell widget plugin that displays folders from a specified directory and opens them in your preferred editor (PhpStorm, VS Code, Neovim, etc.).
 
@@ -13,7 +13,7 @@ A DankMaterialShell widget plugin that displays folders from a specified directo
 ## Installation
 
 ```bash
-cp -r PhpStormFolders ~/.config/DankMaterialShell/plugins/
+cp -r DevFolders ~/.config/DankMaterialShell/plugins/
 dms restart
 ```
 
@@ -31,7 +31,7 @@ The plugin supports multiple editors. Configure them in `~/.config/DankMaterialS
 
 ```json
 {
-  "phpstormFolders": {
+  "devFolders": {
     "watchDirectory": "/home/user/Projects",
     "defaultEditorIndex": 0,
     "editors": [

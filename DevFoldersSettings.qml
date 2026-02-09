@@ -5,7 +5,7 @@ import qs.Widgets
 
 PluginSettings {
     id: root
-    pluginId: "phpstormFolders"
+    pluginId: "devFolders"
 
     // Section: Directory
     StyledText {

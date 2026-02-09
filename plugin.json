@@ -1,13 +1,13 @@
 {
-  "id": "phpstormFolders",
-  "name": "Project Folders",
+  "id": "devFolders",
+  "name": "DevFolders",
   "description": "Quick access to project folders - open in any editor (PhpStorm, VS Code, Neovim, etc.)",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Hansi",
   "icon": "folder_code",
   "type": "widget",
-  "component": "./PhpStormFolders.qml",
-  "settings": "./PhpStormFoldersSettings.qml",
+  "component": "./DevFolders.qml",
+  "settings": "./DevFoldersSettings.qml",
   "permissions": ["settings_read", "settings_write", "process"],
   "requires_dms": ">=1.2.0"
 }
