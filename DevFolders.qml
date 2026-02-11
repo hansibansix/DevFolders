@@ -660,6 +660,10 @@ PluginComponent {
                 if (newIdx >= displayList.length) newIdx = 0
                 selectedIndex = newIdx
                 listView.positionViewAtIndex(selectedIndex, ListView.Contain)
+                if (listView.contentHeight > listView.height) {
+                    scrollBar.keyboardActive = true
+                    scrollBarFlash.restart()
+                }
             }
 
             function getSelectedRepo() {
@@ -1028,14 +1032,21 @@ PluginComponent {
                         spacing: Theme.spacingS
                         ScrollBar.vertical: ScrollBar {
                             id: scrollBar
+                            property bool keyboardActive: false
                             contentItem: Rectangle {
                                 implicitWidth: 4
                                 radius: 2
                                 color: scrollBar.pressed ? Theme.primary : Theme.outlineVariant
-                                opacity: scrollBar.active ? 1 : 0
+                                opacity: scrollBar.active || scrollBar.keyboardActive ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: Theme.shortDuration } }
                                 Behavior on color { ColorAnimation { duration: Theme.shortDuration } }
                             }
+                        }
+
+                        Timer {
+                            id: scrollBarFlash
+                            interval: 800
+                            onTriggered: scrollBar.keyboardActive = false
                         }
 
                         displaced: Transition {
