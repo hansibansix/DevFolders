@@ -1069,7 +1069,7 @@ PluginComponent {
                             }
 
                             width: listView.width - (scrollBar.visible ? scrollBar.width + Theme.spacingXS : Theme.spacingM)
-                            height: isGroup ? 36 : (secondaryText ? 56 : 48)
+                            height: isGroup ? 40 : (secondaryText ? 64 : 52)
                             radius: Theme.cornerRadius
 
                             color: {
@@ -1104,8 +1104,8 @@ PluginComponent {
                             Item {
                                 visible: delegateItem.isGroup
                                 anchors.fill: parent
-                                anchors.leftMargin: Theme.spacingS
-                                anchors.rightMargin: Theme.spacingS
+                                anchors.leftMargin: Theme.spacingM
+                                anchors.rightMargin: Theme.spacingM
 
                                 DankIcon {
                                     id: groupIcon
@@ -1161,7 +1161,10 @@ PluginComponent {
                             Item {
                                 visible: delegateItem.isRepo
                                 anchors.fill: parent
-                                anchors.margins: Theme.spacingM
+                                anchors.leftMargin: Theme.spacingM + 2
+                                anchors.rightMargin: Theme.spacingM + 2
+                                anchors.topMargin: Theme.spacingS
+                                anchors.bottomMargin: Theme.spacingS
 
                                 // Leading icon with status dot
                                 Item {
@@ -1282,6 +1285,7 @@ PluginComponent {
 
                                 // Content area
                                 Column {
+                                    clip: true
                                     anchors.left: leadIconContainer.right
                                     anchors.leftMargin: Theme.spacingM
                                     anchors.right: actionBtnRow.left
@@ -1289,12 +1293,34 @@ PluginComponent {
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 2
 
-                                    Row {
+                                    Item {
                                         id: nameRow
                                         width: parent.width
-                                        spacing: Theme.spacingS
+                                        height: Math.max(nameLabel.implicitHeight, gitChip.height)
+
+                                        Rectangle {
+                                            id: gitChip
+                                            width: gitChipLabel.contentWidth + Theme.spacingS * 2
+                                            height: 20
+                                            radius: 10
+                                            color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                            border.width: 1
+                                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+
+                                            StyledText {
+                                                id: gitChipLabel
+                                                text: "git"
+                                                font.pixelSize: Theme.fontSizeXSmall
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                                anchors.centerIn: parent
+                                            }
+                                        }
 
                                         StyledText {
+                                            id: nameLabel
                                             text: {
                                                 if (!delegateItem.repoData) return ""
                                                 if (popout.isSearching && delegateItem.repoData.matchIndices) {
@@ -1308,29 +1334,11 @@ PluginComponent {
                                             font.pixelSize: Theme.fontSizeMedium
                                             font.weight: delegateItem.isSelected ? Font.Medium : Font.Normal
                                             color: Theme.surfaceText
+                                            anchors.left: parent.left
+                                            anchors.right: gitChip.left
+                                            anchors.rightMargin: Theme.spacingS
                                             anchors.verticalCenter: parent.verticalCenter
-                                            elide: Text.ElideMiddle
-                                            width: nameRow.width - gitChip.width - nameRow.spacing
-                                        }
-
-                                        Rectangle {
-                                            id: gitChip
-                                            width: gitChipLabel.contentWidth + Theme.spacingS * 2
-                                            height: 20
-                                            radius: 10
-                                            color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
-                                            border.width: 1
-                                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
-                                            anchors.verticalCenter: parent.verticalCenter
-
-                                            StyledText {
-                                                id: gitChipLabel
-                                                text: "git"
-                                                font.pixelSize: Theme.fontSizeXSmall
-                                                font.weight: Font.Medium
-                                                color: Theme.primary
-                                                anchors.centerIn: parent
-                                            }
+                                            elide: Text.ElideRight
                                         }
                                     }
 
@@ -1469,6 +1477,6 @@ PluginComponent {
         return nameIndices
     }
 
-    popoutWidth: 420
+    popoutWidth: 480
     popoutHeight: 700
 }
